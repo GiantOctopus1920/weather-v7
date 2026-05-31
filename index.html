@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Widget Pogodowy - Ultimate Asfalt Radar</title>
+    <title>Widget Pogodowy - Wielki Radar Szosowy</title>
     
     <style>
         body {
@@ -16,14 +16,14 @@
         .container {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            max-width: 1400px;
+            gap: 20px;
+            max-width: 1500px;
             margin: 0 auto;
         }
-        @media (max-width: 1100px) {
+        @media (max-width: 1150px) {
             .container { grid-template-columns: repeat(2, 1fr); }
         }
-        @media (max-width: 700px) {
+        @media (max-width: 750px) {
             .container { grid-template-columns: 1fr; }
         }
         
@@ -34,7 +34,6 @@
             box-shadow: 0 6px 12px rgba(0,0,0,0.6);
             display: flex;
             flex-direction: column;
-            overflow: hidden;
         }
         
         .current {
@@ -42,7 +41,7 @@
             padding: 15px;
             border-radius: 10px;
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         .temp { font-size: 2.8em; font-weight: bold; color: #ffcc00; margin: 5px 0; }
         .wind { color: #aaa; font-size: 0.95em; margin-bottom: 4px; }
@@ -50,7 +49,7 @@
         
         .advice {
             padding: 15px;
-            margin: 15px 0;
+            margin-bottom: 20px;
             font-size: 1em;
             border-radius: 6px;
             min-height: 40px;
@@ -59,70 +58,71 @@
         }
         
         .section-title { 
-            color: #4da6ff; font-size: 1.3em; border-bottom: 2px solid #444; 
-            padding-bottom: 8px; margin-top: 20px; margin-bottom: 15px; 
+            color: #4da6ff; font-size: 1.2em; border-bottom: 2px solid #444; 
+            padding-bottom: 6px; margin-top: 15px; margin-bottom: 15px; 
             font-weight: 600;
         }
         
-        .infographic-wrapper {
-            background-color: #1a2530; 
-            border-radius: 12px;
-            padding: 15px;
-            margin-top: auto;
+        /* NOWY KONTENER SEKCJI MAPY - ZNACZNIE WIĘKSZY */
+        .map-area {
+            height: 320px; /* Potężna, duża przestrzeń na mapę */
+            background-color: #1a2530;
+            border-radius: 10px;
             position: relative;
             overflow: hidden;
             border: 1px solid #444;
-            color: #ccc;
-            height: 410px;
+            margin-bottom: 15px;
         }
         
+        /* Konturowa mapa w tle */
         .map-contours {
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 48%;
-            background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><path fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" d="M10,10 C50,50 100,20 150,50 S200,80 250,50 S300,20 350,50 S390,90 390,120 S350,150 300,180 S250,210 200,180 S150,150 100,180 S50,210 10,180 Z"/><path fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1" d="M20,20 C60,60 110,30 160,60 S210,90 260,60 S310,30 360,60 S395,95 395,125 S355,155 305,185 S255,215 205,185 S155,155 105,185 S55,215 15,185 Z"/></svg>');
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><path fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="2" d="M10,10 C50,50 100,20 150,50 S200,80 250,50 S300,20 350,50 S390,90 390,120 S350,150 300,180 S250,210 200,180 S150,150 100,180 S50,210 10,180 Z"/><path fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1.2" d="M20,20 C60,60 110,30 160,60 S210,90 260,60 S310,30 360,60 S395,95 395,125 S355,155 305,185 S255,215 205,185 S155,155 105,185 S55,215 15,185 Z"/></svg>');
             background-size: cover;
-            opacity: 0.6;
+            opacity: 0.75;
             z-index: 1;
         }
         
         .map-labels {
-            position: absolute; top: 0; left: 0; width: 100%; height: 48%;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none;
             z-index: 3;
         }
-        .map-label { font-size: 0.75em; color: rgba(255,255,255,0.5); position: absolute; }
-        .label-center { font-weight: bold; color: rgba(255,255,255,0.9); font-size: 0.85em; }
+        .map-label { font-size: 0.8em; color: rgba(255,255,255,0.45); position: absolute; }
+        .label-center { font-weight: bold; color: rgba(255,255,255,0.95); font-size: 0.95em; text-shadow: 0 0 4px #000; }
         
+        /* Strefy dynamicznych opadów deszczu - teraz na całej wielkiej mapie */
         .map-precipitation {
-            position: absolute; top: 0; left: 0; width: 100%; height: 48%;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none;
             z-index: 2;
         }
         .rain-zone { 
             position: absolute; 
             border-radius: 50%; 
-            filter: blur(14px); 
+            filter: blur(18px); 
             display: block !important;
             transform: translate(-50%, -50%);
         }
         
+        /* LEGENDA W ROGU MAPY */
         .map-legend {
-            position: absolute; top: 8px; right: 10px;
-            font-size: 0.62em; text-align: right;
+            position: absolute; top: 10px; right: 12px;
+            font-size: 0.65em; text-align: right;
             z-index: 4;
             color: rgba(255,255,255,0.4);
-            line-height: 1.3;
+            line-height: 1.4;
+            pointer-events: none;
         }
         
+        /* TABELA DANYCH - TERAZ POD MAPĄ, NIE ZASŁANIA JEJ */
         .infographic-data {
-            position: absolute;
-            bottom: 15px; left: 15px; right: 15px;
             background-color: #1e2936;
             border-radius: 8px;
             padding: 12px;
             font-size: 0.82em;
             border: 1px solid #324354;
-            z-index: 3;
         }
         .data-header { color: #8cb4e6; margin-bottom: 10px; font-weight: 600; font-size: 0.85em; }
         .data-grid { display: flex; flex-direction: column; gap: 8px; }
@@ -152,7 +152,7 @@
 
 <div class="container">
     <div class="card" id="loc1">
-        <div class="section-title" style="margin-top: 0; color: #ffcc00;">Sufczyn (32-852)</div>
+        <div class="section-title" style="margin-top: 0; color: #ffcc00; border-bottom: none;">Sufczyn (32-852)</div>
         <div class="current">
             <div class="temp">...</div>
             <div class="wind">Pobieranie...</div>
@@ -160,36 +160,39 @@
         </div>
         <div class="advice" id="advice-loc1">Trwa analiza jezdni...</div>
         
-        <div class="infographic-wrapper">
+        <div class="section-title">Wielki Inteligentny Radar</div>
+        <div class="map-area">
             <div class="map-contours"></div>
             <div class="map-labels">
-                <div class="map-label label-center" style="top: 25%; left: 45%;">SUFCZYN</div>
-                <div class="map-label" style="top: 15%; left: 18%;">Brzesko</div>
-                <div class="map-label" style="top: 22%; left: 75%;">Tarnów</div>
-                <div class="map-label" style="top: 40%; left: 38%;">Dębno</div>
+                <div class="map-label label-center" style="top: 50%; left: 50%;">SUFCZYN</div>
+                <div class="map-label" style="top: 30%; left: 15%;">Brzesko</div>
+                <div class="map-label" style="top: 40%; left: 78%;">Tarnów</div>
+                <div class="map-label" style="top: 75%; left: 40%;">Dębno</div>
             </div>
             
             <div class="map-legend">
+                Skala Nawierzchni:<br>
                 <span style="color:#2ecc71;">■</span> Sucho (Brak zmian)<br>
-                <span style="color:#f1c40f;">■</span> Mżawka (Droga wilgotna)<br>
-                <span style="color:#e67e22;">■</span> Deszcz (Droga mokra)<br>
-                <span style="color:#e74c3c;">■</span> Ulewa (Potoki/Kałuże)<br>
-                <span style="color:#9b59b6;">■</span> Burza (Niebezpieczeństwo)
+                <span style="color:#f1c40f;">■</span> Mżawka (Asfalt wilgotny)<br>
+                <span style="color:#e67e22;">■</span> Deszcz (Asfalt mokry)<br>
+                <span style="color:#e74c3c;">■</span> Ulewa (Kałuże/Rzeki)<br>
+                <span style="color:#9b59b6;">■</span> Burza (Zagrożenie)
             </div>
             
             <div class="map-precipitation" id="rain-loc1"></div>
-            
-            <div class="infographic-data">
-                <div class="data-header">STAN ASFALTU (Zbieżny z Google):</div>
-                <div class="data-grid" id="hourly-loc1">Ładowanie...</div>
-            </div>
         </div>
+
+        <div class="infographic-data">
+            <div class="data-header">PROGNOZA GODZINOWA (Zbieżna z Google):</div>
+            <div class="data-grid" id="hourly-loc1">Ładowanie...</div>
+        </div>
+
         <div class="section-title">Najbliższe dni</div>
-        <div class="data-list daily" id="daily-loc1" style="background: #222; margin-bottom: 0;">Ładowanie...</div>
+        <div class="data-list daily" id="daily-loc1" style="background: #222; padding: 12px; border-radius: 8px;">Ładowanie...</div>
     </div>
 
     <div class="card" id="loc2">
-        <div class="section-title" style="margin-top: 0; color: #ffcc00;">Kraków (30-547)</div>
+        <div class="section-title" style="margin-top: 0; color: #ffcc00; border-bottom: none;">Kraków (30-547)</div>
         <div class="current">
             <div class="temp">...</div>
             <div class="wind">Pobieranie...</div>
@@ -197,36 +200,39 @@
         </div>
         <div class="advice" id="advice-loc2">Trwa analiza jezdni...</div>
         
-        <div class="infographic-wrapper">
+        <div class="section-title">Wielki Inteligentny Radar</div>
+        <div class="map-area">
             <div class="map-contours"></div>
             <div class="map-labels">
-                <div class="map-label label-center" style="top: 25%; left: 35%;">KRAKÓW</div>
-                <div class="map-label" style="top: 38%; left: 58%;">Wieliczka</div>
-                <div class="map-label" style="top: 35%; left: 12%;">Skawina</div>
-                <div class="map-label" style="top: 10%; left: 45%;">Mistrzejowice</div>
+                <div class="map-label label-center" style="top: 45%; left: 40%;">KRAKÓW</div>
+                <div class="map-label" style="top: 65%; left: 65%;">Wieliczka</div>
+                <div class="map-label" style="top: 60%; left: 15%;">Skawina</div>
+                <div class="map-label" style="top: 20%; left: 55%;">Mistrzejowice</div>
             </div>
             
             <div class="map-legend">
+                Skala Nawierzchni:<br>
                 <span style="color:#2ecc71;">■</span> Sucho (Brak zmian)<br>
-                <span style="color:#f1c40f;">■</span> Mżawka (Droga wilgotna)<br>
-                <span style="color:#e67e22;">■</span> Deszcz (Droga mokra)<br>
-                <span style="color:#e74c3c;">■</span> Ulewa (Potoki/Kałuże)<br>
-                <span style="color:#9b59b6;">■</span> Burza (Niebezpieczeństwo)
+                <span style="color:#f1c40f;">■</span> Mżawka (Asfalt wilgotny)<br>
+                <span style="color:#e67e22;">■</span> Deszcz (Asfalt mokry)<br>
+                <span style="color:#e74c3c;">■</span> Ulewa (Kałuże/Rzeki)<br>
+                <span style="color:#9b59b6;">■</span> Burza (Zagrożenie)
             </div>
             
             <div class="map-precipitation" id="rain-loc2"></div>
-            
-            <div class="infographic-data">
-                <div class="data-header">STAN DRÓG W KRAKOWIE:</div>
-                <div class="data-grid" id="hourly-loc2">Ładowanie...</div>
-            </div>
         </div>
+
+        <div class="infographic-data">
+            <div class="data-header">PROGNOZA GODZINOWA (Zbieżna z Google):</div>
+            <div class="data-grid" id="hourly-loc2">Ładowanie...</div>
+        </div>
+
         <div class="section-title">Najbliższe dni</div>
-        <div class="data-list daily" id="daily-loc2" style="background: #222; margin-bottom: 0;">Ładowanie...</div>
+        <div class="data-list daily" id="daily-loc2" style="background: #222; padding: 12px; border-radius: 8px;">Ładowanie...</div>
     </div>
 
     <div class="card" id="loc3">
-        <div class="section-title" style="margin-top: 0; color: #ffcc00;">Sępopol (11-210)</div>
+        <div class="section-title" style="margin-top: 0; color: #ffcc00; border-bottom: none;">Sępopol (11-210)</div>
         <div class="current">
             <div class="temp">...</div>
             <div class="wind">Pobieranie...</div>
@@ -234,32 +240,35 @@
         </div>
         <div class="advice" id="advice-loc3">Trwa analiza jezdni...</div>
         
-        <div class="infographic-wrapper">
+        <div class="section-title">Wielki Inteligentny Radar</div>
+        <div class="map-area">
             <div class="map-contours"></div>
             <div class="map-labels">
-                <div class="map-label label-center" style="top: 25%; left: 40%;">SĘPOPOL</div>
-                <div class="map-label" style="top: 18%; left: 10%;">Bartoszyce</div>
-                <div class="map-label" style="top: 38%; left: 52%;">Korsze</div>
-                <div class="map-label" style="top: 8%; left: 65%;">Granica Państwa</div>
+                <div class="map-label label-center" style="top: 50%; left: 50%;">SĘPOPOL</div>
+                <div class="map-label" style="top: 40%; left: 15%;">Bartoszyce</div>
+                <div class="map-label" style="top: 70%; left: 60%;">Korsze</div>
+                <div class="map-label" style="top: 20%; left: 65%;">Granica Państwa</div>
             </div>
             
             <div class="map-legend">
+                Skala Nawierzchni:<br>
                 <span style="color:#2ecc71;">■</span> Sucho (Brak zmian)<br>
-                <span style="color:#f1c40f;">■</span> Mżawka (Droga wilgotna)<br>
-                <span style="color:#e67e22;">■</span> Deszcz (Droga mokra)<br>
-                <span style="color:#e74c3c;">■</span> Ulewa (Potoki/Kałuże)<br>
-                <span style="color:#9b59b6;">■</span> Burza (Niebezpieczeństwo)
+                <span style="color:#f1c40f;">■</span> Mżawka (Asfalt wilgotny)<br>
+                <span style="color:#e67e22;">■</span> Deszcz (Asfalt mokry)<br>
+                <span style="color:#e74c3c;">■</span> Ulewa (Kałuże/Rzeki)<br>
+                <span style="color:#9b59b6;">■</span> Burza (Zagrożenie)
             </div>
             
             <div class="map-precipitation" id="rain-loc3"></div>
-            
-            <div class="infographic-data">
-                <div class="data-header">STAN DRÓG W SĘPOPOLU:</div>
-                <div class="data-grid" id="hourly-loc3">Ładowanie...</div>
-            </div>
         </div>
+
+        <div class="infographic-data">
+            <div class="data-header">PROGNOZA GODZINOWA (Zbieżna z Google):</div>
+            <div class="data-grid" id="hourly-loc3">Ładowanie...</div>
+        </div>
+
         <div class="section-title">Najbliższe dni</div>
-        <div class="data-list daily" id="daily-loc3" style="background: #222; margin-bottom: 0;">Ładowanie...</div>
+        <div class="data-list daily" id="daily-loc3" style="background: #222; padding: 12px; border-radius: 8px;">Ładowanie...</div>
     </div>
 </div>
 
@@ -281,39 +290,36 @@
         return "Pochmurno";
     }
 
-    // INTERPRETATOR STANU NAWIERZCHNI DLA CZŁOWIEKA
     function interpretWeather(precip, rawProb, wCode) {
         var res = { class: "precip-none", text: "Sucho (0%)", icon: "✅", color: "rgba(46, 204, 113, 0)", filterProb: 0 };
         
-        // ULTIMATE FILTR PROCENTÓW GOOGLE (Tłumienie fałszywych alarmów przy braku wody)
         var googleProb = rawProb;
-        if (precip > 0 && precip <= 0.2 && rawProb > 50) {
-            googleProb = Math.round(rawProb * 0.3); // Ścinamy 86% do realnych 25% dla mżawki
+        if (precip > 0 && precip <= 0.25 && rawProb > 50) {
+            googleProb = Math.round(rawProb * 0.3); 
         }
         res.filterProb = googleProb;
 
         if (wCode >= 95 || precip > 6.0) {
             res.class = "precip-storm";
-            res.text = "Burza / Nawałnica (" + googleProb + "%)";
+            res.text = "Burza (" + googleProb + "%)";
             res.icon = "⛈️";
-            res.color = "rgba(155, 89, 182, 0.6)";
+            res.color = "rgba(155, 89, 182, 0.65)";
         } else if (precip > 2.5) {
             res.class = "precip-high";
-            res.text = "Ulewa: " + precip.toFixed(1) + " l/m² (" + googleProb + "%)";
+            res.text = precip.toFixed(1) + " l/m² (" + googleProb + "%) Ulewa";
             res.icon = "❌";
-            res.color = "rgba(231, 76, 60, 0.55)";
+            res.color = "rgba(231, 76, 60, 0.6)";
         } else if (precip > 0.8) {
             res.class = "precip-mid";
-            res.text = "Mokro: " + precip.toFixed(1) + " l/m² (" + googleProb + "%)";
+            res.text = precip.toFixed(1) + " l/m² (" + googleProb + "%) Mokro";
             res.icon = "❌";
-            res.color = "rgba(230, 126, 34, 0.5)";
+            res.color = "rgba(230, 126, 34, 0.55)";
         } else if (precip > 0.0 || googleProb > 15) {
-            // WYKRYWANIE TWOJEJ REALNEJ MŻAWKI
             var displayPrecip = precip > 0 ? precip.toFixed(1) + " l" : "< 0.2 l";
             res.class = "precip-low";
-            res.text = "Mżawka: " + displayPrecip + " (" + googleProb + "%)";
+            res.text = displayPrecip + " /m² (" + googleProb + "%) Mżawka";
             res.icon = "⚠️";
-            res.color = "rgba(241, 196, 15, 0.45)";
+            res.color = "rgba(241, 196, 15, 0.5)";
         } else {
             res.text = "Sucho (" + googleProb + "%)";
         }
@@ -322,15 +328,15 @@
 
     function getRoadAdvice(temp, wind, worstItem) {
         var text = "";
-        if (worstItem.class === "precip-storm") return { text: "⛈️ <b>ALARM BURZOWY:</b> Ryzyko wyładowań. Nie wyjeżdżaj.", color: "#9b59b6", bg: "#25162b" };
-        if (worstItem.class === "precip-high") return { text: "🌧️ <b>Droga nieprzejezdna:</b> Ściana wody, potoki na zakrętach.", color: "#e74c3c", bg: "#331c1a" };
-        if (worstItem.class === "precip-mid") return { text: "☔ <b>Asfalt mokry (czarny):</b> Tworzą się kałuże. Słaba przyczepność.", color: "#e67e22", bg: "#33221a" };
-        if (worstItem.class === "precip-low") return { text: "⚠️ <b>Uwaga na asfalt:</b> Droga robi się wilgotna/ciemna od mżawki.", color: "#f1c40f", bg: "#332c1a" };
+        if (worstItem.class === "precip-storm") return { text: "⛈️ <b>ALARM BURZOWY:</b> Ryzyko wyładowań i piorunów. Nie jedź.", color: "#9b59b6", bg: "#25162b" };
+        if (worstItem.class === "precip-high") return { text: "🌧️ <b>Droga niebezpieczna:</b> Mocna ulewa, rzeki wody na jezdni.", color: "#e74c3c", bg: "#331c1a" };
+        if (worstItem.class === "precip-mid") return { text: "☔ <b>Asfalt mokry (czarny):</b> Tworzą się kałuże, duże ryzyko poślizgu.", color: "#e67e22", bg: "#33221a" };
+        if (worstItem.class === "precip-low") return { text: "⚠️ <b>Nawierzchnia wilgotna:</b> Pada mżawka. Szosa pryska spod kół.", color: "#f1c40f", bg: "#332c1a" };
         
-        if (wind > 30) { text += "💨 Silny wiatr boczny. <br>"; }
-        if (temp < 10) { text += "🧤 Chłodno, zadbaj o ciepły strój. <br>"; }
+        if (wind > 30) { text += "💨 Silny wiatr boczny utrudnia jazdę. <br>"; }
+        if (temp < 10) { text += "🧤 Chłodno, załóż cieplejsze rękawiczki. <br>"; }
         
-        return { text: text || "🚲 <b>Asfalt całkowicie suchy!</b> Idealne warunki na szosę.", color: "#2ecc71", bg: "#1a3320" };
+        return { text: text || "🚲 <b>Asfalt całkowicie suchy!</b> Idealne warunki na trasę szosową.", color: "#2ecc71", bg: "#1a3320" };
     }
 
     function fetchWeatherData() {
@@ -353,9 +359,8 @@
                         var w = Math.round(data.current.wind_speed_10m);
                         var currentCode = data.current.weather_code;
                         
-                        // Renderowanie danych tekstowych na samej górze karty (Bieżący moment)
                         var curInterp = interpretWeather(data.current.precipitation || 0, data.current.precipitation_probability || 0, currentCode);
-                        document.getElementById('current-precip-' + loc.id).innerHTML = 'Status: <span class="' + curInterp.class + '">' + curInterp.text + '</span>';
+                        document.getElementById('current-precip-' + loc.id).innerHTML = 'Status teraz: <span class="' + curInterp.class + '">' + curInterp.text + '</span>';
 
                         card.querySelector('.temp').innerHTML = t + " &deg;C";
                         card.querySelector('.wind').innerHTML = "Wiatr: " + w + " km/h";
@@ -387,22 +392,23 @@
                             var tempHour = Math.round(data.hourly.temperature_2m[idx]);
                             var wCode = data.hourly.weather_code[idx];
                             
-                            // Wywołanie sztucznej inteligencji interpretacji dla każdego wiersza
                             var interp = interpretWeather(p, prob, wCode);
                             
                             if (k < 3) {
                                 if (interp.class === "precip-storm") worstItemIn3h = interp;
-                                else if (interp.class === "high" && worstItemIn3h.class !== "precip-storm") worstItemIn3h = interp;
+                                else if (interp.class === "precip-high" && worstItemIn3h.class !== "precip-storm") worstItemIn3h = interp;
                                 else if (interp.class === "precip-mid" && worstItemIn3h.class !== "precip-storm" && worstItemIn3h.class !== "precip-high") worstItemIn3h = interp;
                                 else if (interp.class === "precip-low" && worstItemIn3h.class === "precip-none") worstItemIn3h = interp;
                             }
                             
-                            // RENDERING MAPY: Chmury idealnie dopasowane rozmiarem do litrów i pozycją
+                            // NOWY SYSTEM POZYCJONOWANIA CHMUR NA WIĘKSZYM OBSZARZE
                             if (interp.class !== "precip-none") {
-                                var baseRadius = p > 0 ? p * 35 : 25;
-                                var rainSize = Math.min(baseRadius, 100) + 30;
-                                var xPos = 45 + (k * 7) - 10; 
-                                var yPos = 25 - (k * 3) + 2;  
+                                var baseRadius = p > 0 ? p * 45 : 35;
+                                var rainSize = Math.min(baseRadius, 140) + 40; // Większe, ładniejsze chmury
+                                
+                                // Dynamiczne rozlewanie chmury wokół środka wielkiej makiety mapy
+                                var xPos = 50 + (k * 8) - 15; 
+                                var yPos = 45 - (k * 4) + 2;  
                                 rainHTMLData += '<div class="rain-zone" style="top:' + yPos + '%; left:' + xPos + '%; width:' + rainSize + 'px; height:' + rainSize + 'px; background-color:' + interp.color + '; opacity:1; display:block;"></div>';
                             }
 
@@ -415,13 +421,12 @@
                         }
                         
                         if (rainHTMLData === "") {
-                            rainHTMLData = '<div style="position:absolute; top:21%; width:100%; text-align:center; color:#2ecc71; font-size:0.82em; font-weight:bold; letter-spacing:1px; z-index:5;">NIEBO CZYSTE / DROGA BEZPIECZNA</div>';
+                            rainHTMLData = '<div style="position:absolute; top:45%; width:100%; text-align:center; color:#2ecc71; font-size:0.85em; font-weight:bold; letter-spacing:1px; z-index:5;">NIEBO CZYSTE / BRAK OPADÓW</div>';
                         }
                         
                         document.getElementById('rain-' + loc.id).innerHTML = rainHTMLData;
                         document.getElementById('hourly-' + loc.id).innerHTML = hHTML;
 
-                        // Wyliczenie ostatecznej porady drogowej
                         var adviceResult = getRoadAdvice(t, w, worstItemIn3h);
                         var advDiv = document.getElementById('advice-' + loc.id);
                         advDiv.innerHTML = adviceResult.text;
