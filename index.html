@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widget Pogodowy - Stan Asfaltu</title>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            margin: 0;
+            padding: 15px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        @media (max-width: 1100px) {
+            .container { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 700px) {
+            .container { grid-template-columns: 1fr; }
+        }
+        
+        .card {
+            background-color: #2d2d2d;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .current {
+            background-color: #222;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .temp { font-size: 2.8em; font-weight: bold; color: #ffcc00; margin: 5px 0; }
+        .wind { color: #aaa; font-size: 0.95em; }
+        .advice {
+            background-color: #1a3320;
+            border-left: 6px solid #2ecc71;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 1em;
+            border-radius: 0 6px 6px 0;
+            min-height: 40px;
+            line-height: 1.4;
+        }
+        
+        .section-title { 
+            color: #4da6ff; font-size: 1.3em; border-bottom: 2px solid #444; 
+            padding-bottom: 8px; margin-top: 20px; margin-bottom: 15px; 
+            font-weight: 600;
+        }
+        
+        /* INFOGRAFIKA MAPOWA */
+        .infographic-wrapper {
+            background-color: #1a2530; 
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: auto;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #444;
+            color: #ccc;
+            height: 410px;
+        }
+        
+        .map-contours {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 45%;
+            background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><path fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" d="M10,10 C50,50 100,20 150,50 S200,80 250,50 S300,20 350,50 S390,90 390,120 S350,150 300,180 S250,210 200,180 S150,150 100,180 S50,210 10,180 Z"/><path fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1" d="M20,20 C60,60 110,30 160,60 S210,90 260,60 S310,30 360,60 S395,95 395,125 S355,155 305,185 S255,215 205,185 S155,155 105,185 S55,215 15,185 Z"/></svg>');
+            background-size: cover;
+            opacity: 0.6;
+        }
+        
+        .map-labels {
+            position: absolute; top: 0; left: 0; width: 100%; height: 45%;
+            pointer-events: none;
+        }
+        .map-label { font-size: 0.75em; color: rgba(255,255,255,0.5); position: absolute; }
+        .label-center { font-weight: bold; color: rgba(255,255,255,0.9); font-size: 0.85em; }
+        
+        .map-precipitation {
+            position: absolute; top: 0; left: 0; width: 100%; height: 45%;
+            pointer-events: none;
+        }
+        .rain-zone { position: absolute; border-radius: 50%; filter: blur(16px); opacity: 0; transition: all 0.5s; }
+        
+        .map-legend {
+            position: absolute; top: 10px; right: 12px;
+            font-size: 0.68em; text-align: right;
+            z-index: 2;
+            color: rgba(255,255,255,0.4);
+            line-height: 1.4;
+        }
+        
+        /* Tabela danych (szczegóły 6h) */
+        .infographic-data {
+            position: absolute;
+            bottom: 15px; left: 15px; right: 15px;
+            background-color: #1e2936;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.82em;
+            border: 1px solid #324354;
+        }
+        .data-header { color: #8cb4e6; margin-bottom: 10px; font-weight: 600; font-size: 0.85em; }
+        .data-grid { display: flex; flex-direction: column; gap: 8px; }
+        .data-row { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px; }
+        .data-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .data-col { flex: 1; text-align: center; }
+        .data-col:first-child { text-align: left; font-weight: 500; color: #888; }
+        .data-col:last-child { text-align: right; font-weight: bold; }
+        
+        /* SYSTEM OCENY JEZDNI */
+        .precip-none { color: #2ecc71; }   /* Zielony - sucho / bezpiecznie */
+        .precip-low { color: #f1c40f; }    /* Żółty - wilgotna nawierzchnia */
+        .precip-mid { color: #e67e22; }    /* Pomarańczowy - mokro */
+        .precip-high { color: #e74c3c; }   /* Czerwony - rzeki/potoki */
+        .precip-storm { color: #9b59b6; }  /* Fioletowy - burza */
+
+        .btn-refresh { 
+            display: block; margin: 15px auto 25px; padding: 12px 25px; 
+            background: #4da6ff; color: #000; border: none; border-radius: 8px; 
+            font-weight: bold; cursor: pointer; font-size: 1.1em;
+        }
+        .btn-refresh:hover { background: #3388dd; }
+    </style>
+</head>
+<body>
+
+<button class="btn-refresh" onclick="location.reload()">Odśwież Asfalt-Radar</button>
+
+<div class="container">
+    <div class="card" id="loc1">
+        <div class="section-title" style="margin-top: 0; color: #ffcc00;">Sufczyn (32-852)</div>
+        <div class="current">
+            <div class="temp">...</div>
+            <div class="wind">Pobieranie...</div>
+        </div>
+        <div class="advice">Trwa analiza jezdni...</div>
+        
+        <div class="infographic-wrapper">
+            <div class="map-contours"></div>
+            <div class="map-labels">
+                <div class="map-label label-center" style="top: 22%; left: 40%;">SUFCZYN</div>
+                <div class="map-label" style="top: 12%; left: 15%;">Brzesko</div>
+                <div class="map-label" style="top: 18%; left: 70%;">Tarnów</div>
+                <div class="map-label" style="top: 35%; left: 35%;">Dębno</div>
+            </div>
+            
+            <div class="map-legend">
+                Wpływ na nawierzchnię:<br>
+                <span style="color:#2ecc71;">■</span> Sucho / Mikroskopijna chmura<br>
+                <span style="color:#f1c40f;">■</span> Mżawka (Asfalt ciemny/wilgotny)<br>
+                <span style="color:#e67e22;">■</span> Mokro (Zaczynają się kałuże)<br>
+                <span style="color:#e74c3c;">■</span> Ulewa (Stojąca woda / potoki)
+            </div>
+            
+            <div class="map-precipitation" id="rain-loc1"></div>
+            
+            <div class="infographic-data">
+                <div class="data-header">STAN DRÓG W SUFCZYNIE (Najbliższe 6h):</div>
+                <div class="data-grid" id="hourly-loc1">Ładowanie...</div>
+            </div>
+        </div>
+        <div class="section-title">Najbliższe dni</div>
+        <div class="data-list daily" id="daily-loc1" style="background: #222; margin-bottom: 0;">Ładowanie...</div>
+    </div>
+
+    <div class="card" id="loc2">
+        <div class="section-title" style="margin-top: 0; color: #ffcc00;">Kraków (30-547)</div>
+        <div class="current">
+            <div class="temp">...</div>
+            <div class="wind">Pobieranie...</div>
+        </div>
+        <div class="advice">Trwa analiza jezdni...</div>
+        
+        <div class="infographic-wrapper">
+            <div class="map-contours"></div>
+            <div class="map-labels">
+                <div class="map-label label-center" style="top: 22%; left: 35%;">KRAKÓW</div>
+                <div class="map-label" style="top: 35%; left: 55%;">Wieliczka</div>
+                <div class="map-label" style="top: 30%; left: 10%;">Skawina</div>
+                <div class="map-label" style="top: 8%; left: 45%;">Mistrzejowice</div>
+            </div>
+            
+            <div class="map-legend">
+                Wpływ na nawierzchnię:<br>
+                <span style="color:#2ecc71;">■</span> Sucho / Mikroskopijna chmura<br>
+                <span style="color:#f1c40f;">■</span> Mżawka (Asfalt ciemny/wilgotny)<br>
+                <span style="color:#e67e22;">■</span> Mokro (Zaczynają się kałuże)<br>
+                <span style="color:#e74c3c;">■</span> Ulewa (Stojąca woda / potoki)
+            </div>
+            
+            <div class="map-precipitation" id="rain-loc2"></div>
+            
+            <div class="infographic-data">
+                <div class="data-header">STAN DRÓG W KRAKOWIE (Najbliższe 6h):</div>
+                <div class="data-grid" id="hourly-loc2">Ładowanie...</div>
+            </div>
+        </div>
+        <div class="section-title">Najbliższe dni</div>
+        <div class="data-list daily" id="daily-loc2" style="background: #222; margin-bottom: 0;">Ładowanie...</div>
+    </div>
+
+    <div class="card" id="loc3">
+        <div class="section-title" style="margin-top: 0; color: #ffcc00;">Sępopol (11-210)</div>
+        <div class="current">
+            <div class="temp">...</div>
+            <div class="wind">Pobieranie...</div>
+        </div>
+        <div class="advice">Trwa analiza jezdni...</div>
+        
+        <div class="infographic-wrapper">
+            <div class="map-contours"></div>
+            <div class="map-labels">
+                <div class="map-label label-center" style="top: 22%; left: 40%;">SĘPOPOL</div>
+                <div class="map-label" style="top: 18%; left: 10%;">Bartoszyce</div>
+                <div class="map-label" style="top: 35%; left: 50%;">Korsze</div>
+                <div class="map-label" style="top: 8%; left: 65%;">Granica Państwa</div>
+            </div>
+            
+            <div class="map-legend">
+                Wpływ na nawierzchnię:<br>
+                <span style="color:#2ecc71;">■</span> Sucho / Mikroskopijna chmura<br>
+                <span style="color:#f1c40f;">■</span> Mżawka (Asfalt ciemny/wilgotny)<br>
+                <span style="color:#e67e22;">■</span> Mokro (Zaczynają się kałuże)<br>
+                <span style="color:#e74c3c;">■</span> Ulewa (Stojąca woda / potoki)
+            </div>
+            
+            <div class="map-precipitation" id="rain-loc3"></div>
+            
+            <div class="infographic-data">
+                <div class="data-header">STAN DRÓG W SĘPOPOLU (Najbliższe 6h):</div>
+                <div class="data-grid" id="hourly-loc3">Ładowanie...</div>
+            </div>
+        </div>
+        <div class="section-title">Najbliższe dni</div>
+        <div class="data-list daily" id="daily-loc3" style="background: #222; margin-bottom: 0;">Ładowanie...</div>
+    </div>
+</div>
+
+<script>
+    var locations = [
+        { id: 'loc1', lat: 49.9625, lon: 20.7497 }, 
+        { id: 'loc2', lat: 50.0468, lon: 19.9544 }, 
+        { id: 'loc3', lat: 54.2710, lon: 21.0110 }  
+    ];
+
+    function getDesc(code) {
+        if (code === 0) return "Pogodnie";
+        if (code >= 1 && code <= 3) return "Lekkie zachmurzenie";
+        if (code >= 45 && code <= 48) return "Mgła";
+        if (code >= 51 && code <= 67) return "Deszcz";
+        if (code >= 71 && code <= 77) return "Śnieg";
+        if (code >= 80 && code <= 82) return "Ulewa";
+        if (code >= 95 && code <= 99) return "Burza";
+        return "Pochmurno";
+    }
+
+    // ANALIZA DROGOWA - Oceniamy najtrudniejszy stan asfaltu z najbliższych 3h
+    function getRoadAdvice(temp, wind, worstStatus, currentWCode) {
+        var text = "";
+        var cardStyle = "yellow"; // Domyślnie żółty/zielony
+        
+        if (currentWCode >= 95 || worstStatus === "storm") {
+            text += "⛈️ <b>ALARM: Ryzyko burzy!</b> Natychmiast zjedź z trasy. <br>";
+            return { text: text, color: "#e74c3c", bg: "#331c1a" };
+        }
+        
+        if (worstStatus === "high") {
+            text += "🌧️ <b>Droga nieprzejezdna:</b> Ściana wody i stojące potoki na asfalcie. <br>";
+            return { text: text, color: "#e74c3c", bg: "#331c1a" };
+        }
+        
+        if (worstStatus === "mid") {
+            text += "☔ <b>Nawierzchnia mokra (czarna):</b> Tworzą się kałuże, słaba przyczepność szosówki. <br>";
+            return { text: text, color: "#e74c3c", bg: "#331c1a" };
+        }
+        
+        if (worstStatus === "low") {
+            text += "⚠️ <b>Asfalt wilgotny/ciemny:</b> Wiszą chmury, możliwa delikatna mżawka (bez potoków). <br>";
+            return { text: text, color: "#f1c40f", bg: "#332c1a" };
+        }
+        
+        if (worstStatus === "micro") {
+            text += "☁️ <b>Możliwa mikroskopijna mżawka:</b> Brak realnego wpływu na stan dróg. <br>";
+            return { text: text, color: "#2ecc71", bg: "#1a3320" };
+        }
+
+        // Warunki wiatrowe i temperatuwe dopisywane na końcu
+        if (wind > 30) { text += "💨 Silny wiatr utrudnia panowanie nad rowerem. <br>"; }
+        if (temp < 10 && temp >= 0) { text += "🧤 Chłodno, zadbaj o osłonę dłoni i stóp. <br>"; }
+        
+        return { 
+            text: text || "🚲 <b>Droga całkowicie sucha!</b> Idealne warunki na szosę.", 
+            color: "#2ecc71", 
+            bg: "#1a3320" 
+        };
+    }
+
+    function fetchWeatherData() {
+        for (var i = 0; i < locations.length; i++) {
+            (function(loc) {
+                var card = document.getElementById(loc.id);
+                if (!card) return;
+
+                var uniqueStamp = Math.floor(Date.now() / 1000);
+                var url = "https://api.open-meteo.com/v1/forecast?latitude=" + loc.lat + "&longitude=" + loc.lon + "&current=temperature_2m,wind_speed_10m,weather_code&hourly=precipitation,precipitation_probability,temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Europe%2FWarsaw&timeformat=unixtime&_=" + uniqueStamp;
+                
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", url, true);
+                
+                xhr.onload = function() {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        var data = JSON.parse(xhr.responseText);
+                        
+                        var t = Math.round(data.current.temperature_2m);
+                        var w = Math.round(data.current.wind_speed_10m);
+                        var currentCode = data.current.weather_code;
+                        card.querySelector('.temp').innerHTML = t + " &deg;C";
+                        card.querySelector('.wind').innerHTML = "Wiatr: " + w + " km/h";
+
+                        var nowSec = Math.floor(Date.now() / 1000);
+                        var hIndex = 0;
+                        for (var j = 0; j < data.hourly.time.length; j++) {
+                            if (data.hourly.time[j] >= nowSec - 3600) {
+                                hIndex = j;
+                                break;
+                            }
+                        }
+
+                        var hHTML = "";
+                        var rainHTMLData = "";
+                        var worstStatusIn3h = "none"; // Śledzenie stanu jezdni do porady rowerowej
+                        
+                        for (var k = 0; k < 6; k++) { 
+                            var idx = hIndex + k;
+                            if (idx >= data.hourly.time.length) break;
+                            
+                            var dateObj = new Date(data.hourly.time[idx] * 1000);
+                            var hours = dateObj.getHours();
+                            if (hours < 10) hours = "0" + hours;
+                            var timeStr = hours + ":00";
+                            
+                            var p = data.hourly.precipitation[idx] || 0; 
+                            var prob = data.hourly.precipitation_probability[idx] || 0; 
+                            var tempHour = Math.round(data.hourly.temperature_2m[idx]);
+                            var wCode = data.hourly.weather_code[idx];
+                            
+                            var precipClass = 'precip-none';
+                            var textStatus = 'Sucho (0%)';
+                            var statusIcon = '✅';
+                            var rainZoneColor = '';
+                            var currentItemStatus = "none";
+                            
+                            // SKALA FISZALNA STANU DRÓG (Krzyżowanie litrów z procentami z Google)
+                            if (wCode >= 95) {
+                                precipClass = 'precip-storm'; 
+                                textStatus = '🚨 Burza (' + prob + '%)';
+                                statusIcon = '❌';
+                                rainZoneColor = 'rgba(155, 89, 182, 0.65)';
+                                currentItemStatus = "storm";
+                            } else if (p > 3.0) {
+                                precipClass = 'precip-high';  
+                                textStatus = 'Ulewa / Stojąca woda';
+                                statusIcon = '❌';
+                                rainZoneColor = 'rgba(231, 76, 60, 0.6)';
+                                currentItemStatus = "high";
+                            } else if (p > 0.9) {
+                                precipClass = 'precip-mid';   
+                                textStatus = 'Droga mokra / Deszcz';
+                                statusIcon = '❌';
+                                rainZoneColor = 'rgba(230, 126, 34, 0.55)';
+                                currentItemStatus = "mid";
+                            } else if (p >= 0.2 || (prob > 20 && p > 0)) {
+                                precipClass = 'precip-low';   
+                                textStatus = 'Mżawka (Asfalt wilgotny)';
+                                statusIcon = '⚠️';
+                                rainZoneColor = 'rgba(241, 196, 15, 0.45)';
+                                currentItemStatus = "low";
+                            } else if (prob > 15 || p > 0) {
+                                // DETEKCJA MINIMALNEGO OPADU (Zgodna z Twoją prośbą)
+                                precipClass = 'precip-none';   
+                                textStatus = 'Mikro-mżawka (Droga sucha)';
+                                statusIcon = '✅';
+                                rainZoneColor = 'rgba(46, 204, 113, 0.25)';
+                                currentItemStatus = "micro";
+                            } else {
+                                precipClass = 'precip-none';
+                                textStatus = 'Sucho (' + prob + '%)';
+                                statusIcon = '✅';
+                            }
+                            
+                            // Aktualizujemy najgorszy przewidywany status drogowy (dla pierwszych 3 godzin trasy)
+                            if (k < 3) {
+                                if (currentItemStatus === "storm") worstStatusIn3h = "storm";
+                                else if (currentItemStatus === "high" && worstStatusIn3h !== "storm") worstStatusIn3h = "high";
+                                else if (currentItemStatus === "mid" && worstStatusIn3h !== "storm" && worstStatusIn3h !== "high") worstStatusIn3h = "mid";
+                                else if (currentItemStatus === "low" && worstStatusIn3h !== "storm" && worstStatusIn3h !== "high" && worstStatusIn3h !== "mid") worstStatusIn3h = "low";
+                                else if (currentItemStatus === "micro" && worstStatusIn3h === "none") worstStatusIn3h = "micro";
+                            }
+                            
+                            // Rysowanie frontu chmur na mapie
+                            if (prob > 15 || p > 0.1) {
+                                var rainSize = Math.min(prob * 1.1, 95) + 30;
+                                var xPos = 35 + (k * 6) - 10; 
+                                var yPos = 20 - (k * 3) + 5;  
+                                rainHTMLData += '<div class="rain-zone" style="top:' + yPos + '%; left:' + xPos + '%; width:' + rainSize + 'px; height:' + rainSize + 'px; background-color:' + rainZoneColor + '; opacity:1;"></div>';
+                            }
+
+                            hHTML += '<div class="data-row">' +
+                                        '<div class="data-col">' + timeStr + '</div>' +
+                                        '<div class="data-col" style="color: #ffcc00; font-weight: bold;">' + tempHour + '&deg;C</div>' +
+                                        '<div class="data-col">' + statusIcon + '</div>' +
+                                        '<div class="data-col ' + precipClass + '">' + textStatus + '</div>' +
+                                      '</div>';
+                        }
+                        
+                        if (rainHTMLData === "") {
+                            rainHTMLData = '<div style="position:absolute; top:21%; width:100%; text-align:center; color:#2ecc71; font-size:0.82em; font-weight:bold; letter-spacing:1px;">CZYSTE NIEBO / ASFALT SUCHI</div>';
+                        }
+                        
+                        document.getElementById('rain-' + loc.id).innerHTML = rainHTMLData;
+                        document.getElementById('hourly-' + loc.id).innerHTML = hHTML;
+
+                        // Wywołanie inteligentnej porady oceniającej strukturę jezdni
+                        var adviceResult = getRoadAdvice(t, w, worstStatusIn3h, currentCode);
+                        var advDiv = card.querySelector('.advice');
+                        advDiv.innerHTML = adviceResult.text;
+                        advDiv.style.borderLeftColor = adviceResult.color;
+                        advDiv.style.backgroundColor = adviceResult.bg;
+
+                        var dHTML = "";
+                        for (var m = 1; m <= 5; m++) {
+                            if (m >= data.daily.time.length) break;
+                            var dDate = new Date(data.daily.time[m] * 1000); 
+                            var daysPl = ["Niedz", "Pon", "Wt", "Śr", "Czw", "Pt", "Sob"];
+                            var dName = daysPl[dDate.getDay()];
+                            var minTemp = Math.round(data.daily.temperature_2m_min[m]);
+                            var maxTemp = Math.round(data.daily.temperature_2m_max[m]);
+                            var desc = getDesc(data.daily.weather_code[m]);
+                            dHTML += '<div class="data-row"><span>' + dName + ' (' + desc + ')</span><span style="font-weight:bold;">' + minTemp + '&deg;C / ' + maxTemp + '&deg;C</span></div>';
+                        }
+                        document.getElementById('daily-' + loc.id).innerHTML = dHTML;
+                    }
+                };
+                xhr.send();
+            })(locations[i]);
+        }
+    }
+
+    fetchWeatherData();
+</script>
+</body>
+</html>
